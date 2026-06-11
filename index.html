@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de EPC de Innova</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #e0f2fe, #ffffff, #fef3c7);
+      color: #0f172a;
+      padding: 28px;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .top { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 24px; }
+    .brand { font-size: 42px; line-height: 1; font-weight: 900; letter-spacing: .04em; margin-bottom: 18px; }
+    .brand .gold { color: #f59e0b; }
+    .brand .blue { color: #0ea5e9; }
+    h1 {
+      margin: 0; font-size: 34px; line-height: 1.1; font-weight: 900;
+      background: linear-gradient(90deg, #0369a1, #f59e0b);
+      -webkit-background-clip: text; color: transparent;
+    }
+    .desc { margin-top: 10px; color: #475569; font-size: 16px; }
+    .privacy {
+      background: rgba(255,255,255,.75); border: 1px solid #bae6fd; border-radius: 18px;
+      padding: 14px 18px; box-shadow: 0 12px 25px rgba(14,165,233,.12); color: #334155; white-space: nowrap;
+    }
+    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; }
+    .card {
+      background: rgba(255,255,255,.82); border: 1px solid rgba(255,255,255,.7); border-radius: 28px;
+      box-shadow: 0 20px 40px rgba(14,165,233,.13); overflow: hidden; backdrop-filter: blur(10px);
+    }
+    .card h2 { margin: 0; padding: 24px 24px 6px; font-size: 22px; }
+    .sub { padding: 0 24px 8px; margin: 0; color: #64748b; font-size: 14px; }
+    .content { padding: 20px 24px 24px; }
+    .formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 700; color: #334155; }
+    input, select {
+      width: 100%; height: 48px; border: 1px solid #cbd5e1; border-radius: 16px;
+      padding: 0 14px; font-size: 15px; background: rgba(255,255,255,.95); outline: none;
+    }
+    input:focus, select:focus { border-color: #0ea5e9; box-shadow: 0 0 0 4px rgba(14,165,233,.13); }
+    .display {
+      height: 48px; display: flex; align-items: center; border-radius: 16px; padding: 0 14px;
+      background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569;
+    }
+    .programs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .program {
+      cursor: pointer; border: 1px solid #cbd5e1; border-radius: 20px; padding: 17px; background: #fff;
+      text-align: left; color: #334155; transition: .15s;
+    }
+    .program.active.personal { border-color: #0ea5e9; background: #f0f9ff; color: #075985; }
+    .program.active.equipo { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+    .program strong { display: block; font-size: 18px; margin-bottom: 4px; }
+    .program span { font-size: 12px; color: inherit; opacity: .75; }
+    #eligibilityMsg { margin-top: 12px; font-size: 13px; font-weight: 800; color: #dc2626; }
+    .highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+    .highlight {
+      border-radius: 24px; padding: 18px; color: white;
+      background: linear-gradient(135deg, #0284c7, #06b6d4, #f59e0b);
+      box-shadow: 0 15px 30px rgba(14,165,233,.2);
+    }
+    .highlight div:first-child { font-size: 13px; opacity: .9; }
+    .highlight div:last-child { font-size: 32px; font-weight: 900; margin-top: 4px; }
+    .paymentBox { border-radius: 22px; border: 2px solid #0ea5e9; background: #f0f9ff; padding: 16px; }
+    .paymentBox input {
+      font-size: 28px; font-weight: 900; color: #075985; height: 58px;
+      border-color: #7dd3fc; background: white;
+    }
+    .paymentHint { margin-top: 8px; font-size: 12px; color: #64748b; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; }
+    .metric .t { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+    .metric .v { font-size: 20px; font-weight: 800; }
+    .offset {
+      margin-top: 16px; background: linear-gradient(135deg, #fff, #f8fafc); border: 1px solid #e2e8f0;
+      border-radius: 20px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .offset .big { font-size: 28px; font-weight: 900; color: #0369a1; }
+    .offset .big.gold { color: #d97706; }
+    .wide { grid-column: 1 / -1; }
+    .estimate { margin-top: 8px; border-radius: 22px; padding: 20px; background: linear-gradient(90deg, #0284c7, #f59e0b); color: white; }
+    .estimate .n { font-size: 34px; font-weight: 900; }
+    .estimate button {
+      margin-top: 12px; border: 0; border-radius: 14px; padding: 11px 16px;
+      background: white; color: #0369a1; font-weight: 800; cursor: pointer;
+    }
+    @media (max-width: 900px) {
+      .top, .grid { grid-template-columns: 1fr; display: grid; }
+      .formgrid, .metrics, .programs, .highlights, .offset { grid-template-columns: 1fr; }
+      .privacy { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="brand"><span class="gold">HQS</span> <span class="blue">ENERGY</span></div>
+        <h1>Calculadora de EPC de Innova</h1>
+        <p class="desc">Calcula tamaño del sistema, producción aproximada, total del sistema, EPC, pago aproximado y comisión por rol.</p>
+      </div>
+      <div class="privacy">🛡️ Modo visual privado</div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>🧮 Entradas</h2>
+        <div class="content formgrid">
+          <div class="full">
+            <label>Programa</label>
+            <div class="programs">
+              <button id="personalBtn" class="program active personal" onclick="setProgram('personal')">
+                <strong>Sunrun Personal</strong>
+                <span>Oferta personal</span>
+              </button>
+              <button id="equipoBtn" class="program equipo" onclick="setProgram('equipo')">
+                <strong>Sunrun Equipo</strong>
+                <span>Oferta equipo</span>
+              </button>
+            </div>
+            <div id="eligibilityMsg"></div>
+          </div>
+
+          <div>
+            <label>Cantidad de paneles</label>
+            <input id="panels" type="number" value="20" oninput="calc()" />
+          </div>
+
+          <div>
+            <label>Watts por panel</label>
+            <div class="display">410 W</div>
+          </div>
+
+          <div>
+            <label>Cantidad de baterías</label>
+            <input id="batteries" type="number" value="1" oninput="calc()" />
+          </div>
+
+          <div>
+            <label>Rol del vendedor</label>
+            <select id="role" onchange="calc()">
+              <option value="0.06">Trainee — 6%</option>
+              <option value="0.10" selected>Consultor — 10%</option>
+              <option value="0.11">Líder — 11%</option>
+              <option value="0.12">Gerente — 12%</option>
+              <option value="0.14">Partner — 14%</option>
+              <option value="0.16">Partner Ejecutivo — 16%</option>
+            </select>
+          </div>
+
+          <div class="full">
+            <label>EPC de venta</label>
+            <input id="saleEpc" type="number" step="0.01" placeholder="Ej: 4.50" oninput="calc()" />
+          </div>
+
+          <div class="full highlights">
+            <div class="highlight">
+              <div>EPC Base</div>
+              <div id="epcBase">0.00</div>
+            </div>
+            <div class="highlight">
+              <div>EPC Venta</div>
+              <div id="epcVenta">0.00</div>
+            </div>
+          </div>
+
+          <div class="full paymentBox">
+            <label>Pago aproximado fijo</label>
+            <input id="fixedPayment" type="text" value="$0.00" />
+            <div class="paymentHint">Se actualiza automáticamente con programa, paneles, baterías y EPC de venta. Puedes sobrescribirlo manualmente al final.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📈 Resultados</h2>
+        <div class="content">
+          <div class="metrics">
+            <div class="metric"><div class="t">kW</div><div class="v" id="kw">0.00 kW</div></div>
+            <div class="metric"><div class="t">Watts</div><div class="v" id="watts">0 W</div></div>
+            <div class="metric"><div class="t">PV Base</div><div class="v" id="baseSolar">$0.00</div></div>
+            <div class="metric"><div class="t">Promedio consumo anual actual</div><div class="v" id="annualCons">0 kWh</div></div>
+            <div class="metric"><div class="t">Producción Anual</div><div class="v" id="annualProd">0 kWh</div></div>
+            <div class="metric"><div class="t">Producción Mensual</div><div class="v" id="monthlyProd">0 kWh</div></div>
+            <div class="metric"><div class="t">Sistema Base</div><div class="v" id="systemBase">$0.00</div></div>
+            <div class="metric"><div class="t">Comisión Base</div><div class="v" id="commissionBase">$0.00</div></div>
+            <div class="metric"><div class="t">Sistema Venta</div><div class="v" id="systemSale">$0.00</div></div>
+            <div class="metric"><div class="t">Comisión Venta</div><div class="v" id="commissionSale">$0.00</div></div>
+          </div>
+
+          <div class="offset">
+            <div>
+              <div class="t">Offset promedio</div>
+              <div class="big" id="offset">0%</div>
+            </div>
+            <div>
+              <div class="t">Recomendación 120%</div>
+              <div class="big gold" id="rec120">Ya está en 120%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card wide">
+        <h2>📊 Promedio de Consumo</h2>
+        <p class="sub">Calcula el promedio de los 3 meses más altos y estima paneles necesarios.</p>
+        <div class="content formgrid">
+          <div><label>Mes alto 1 (kWh)</label><input id="c1" type="number" value="0" oninput="calc()" /></div>
+          <div><label>Mes alto 2 (kWh)</label><input id="c2" type="number" value="0" oninput="calc()" /></div>
+          <div><label>Mes alto 3 (kWh)</label><input id="c3" type="number" value="0" oninput="calc()" /></div>
+          <div><label>Promedio mensual</label><div class="display" id="avgMonthly">0 kWh</div></div>
+          <div class="full estimate">
+            <div>Paneles estimados</div>
+            <div class="n" id="panelsNeeded">0 paneles</div>
+            <button onclick="usePanels()">Usar este cálculo arriba</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+let program = 'personal';
+const WATTS_PER_PANEL = 410;
+const SUN_HOURS_ANNUAL = 1440;
+
+function money(n) {
+  return new Intl.NumberFormat('es-PR', { style: 'currency', currency: 'USD' }).format(n || 0);
+}
+function num(n, d=2) {
+  return new Intl.NumberFormat('es-PR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
+}
+function epc(n) {
+  return (Number(n) || 0).toFixed(2);
+}
+function setProgram(p) {
+  program = p;
+  document.getElementById('personalBtn').className = 'program personal' + (p === 'personal' ? ' active' : '');
+  document.getElementById('equipoBtn').className = 'program equipo' + (p === 'equipo' ? ' active' : '');
+  calc();
+}
+function getVal(id) {
+  return Number(document.getElementById(id).value) || 0;
+}
+
+function getRules(programName, panels, batteries) {
+  let isEligible = true;
+  let multiplier = 0;
+  let batteryTotal = 0;
+  let eligibilityText = '';
+
+  if (programName === 'personal') {
+    if (panels < 10) {
+      isEligible = false;
+      eligibilityText = 'Sistema no elegible: mínimo requerido 10 paneles';
+    } else if (batteries >= 2) {
+      if (panels < 22) {
+        isEligible = false;
+        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 22 paneles';
+      } else {
+        multiplier = 2.05;
+        batteryTotal = batteries * 10000;
+      }
+    } else if (panels <= 12) {
+      multiplier = 2.05;
+      batteryTotal = batteries * 10000;
+    } else if (panels <= 16) {
+      multiplier = 2.15;
+      batteryTotal = batteries * 10000;
+    } else if (panels <= 20) {
+      multiplier = 2.25;
+      batteryTotal = batteries * 10000;
+    } else {
+      multiplier = 2.30;
+      batteryTotal = batteries * 10000;
+    }
+  }
+
+  if (programName === 'equipo') {
+    if (panels < 10) {
+      isEligible = false;
+      eligibilityText = 'Sistema no elegible: mínimo requerido 10 paneles';
+    } else if (batteries >= 2) {
+      if (panels < 22) {
+        isEligible = false;
+        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 22 paneles';
+      } else {
+        multiplier = 2.17;
+        batteryTotal = batteries * 10500;
+      }
+    } else if (panels <= 12) {
+      multiplier = 2.15;
+      batteryTotal = batteries * 10500;
+    } else if (panels <= 16) {
+      multiplier = 2.15;
+      batteryTotal = batteries * 11000;
+    } else if (panels <= 20) {
+      multiplier = 2.25;
+      batteryTotal = batteries * 11000;
+    } else if (panels <= 24) {
+      multiplier = 2.25;
+      batteryTotal = batteries * 11500;
+    } else {
+      multiplier = 2.25;
+      batteryTotal = batteries * 12000;
+    }
+  }
+
+  return { isEligible, multiplier, batteryTotal, eligibilityText };
+}
+
+function estimatePayment(panels, batteries, epcValue) {
+  // Tabla base tomada de los ejemplos reales compartidos:
+  // para cada combinación paneles-baterías, se interpola/extrapola pago según EPC.
+  const table = {
+    "10-1": [[4.551, 192.63], [4.480, 189.96]],
+    "12-1": [[4.112, 205.96], [4.041, 202.76]],
+    "14-1": [[3.992, 229.41], [3.921, 225.68]],
+    "16-1": [[3.796, 246.48], [3.725, 242.22]],
+    "18-1": [[3.644, 263.53], [3.573, 258.74]],
+    "20-1": [[3.523, 280.60], [3.452, 275.27]],
+    "22-1": [[3.425, 297.65], [3.353, 291.79]],
+    "22-2": [[4.333, 384.20], [4.263, 378.33]],
+    "24-2": [[4.149, 399.13], [4.078, 392.73]]
+  };
+
+  function paymentFromPair(points, epc) {
+    const [a, b] = points;
+    const epc1 = a[0], pay1 = a[1];
+    const epc2 = b[0], pay2 = b[1];
+    const slope = (pay2 - pay1) / (epc2 - epc1);
+    return pay1 + (epc - epc1) * slope;
+  }
+
+  const exactKey = panels + "-" + batteries;
+  if (table[exactKey]) {
+    return paymentFromPair(table[exactKey], epcValue);
+  }
+
+  // Si no existe la combinación exacta, usa las combinaciones cercanas con la misma cantidad de baterías.
+  const matches = Object.keys(table)
+    .map(key => {
+      const [p, b] = key.split("-").map(Number);
+      return { key, panels: p, batteries: b };
+    })
+    .filter(item => item.batteries === batteries)
+    .sort((a, b) => a.panels - b.panels);
+
+  if (matches.length === 0) return 0;
+
+  // Debajo del primer punto conocido
+  if (panels <= matches[0].panels) {
+    return paymentFromPair(table[matches[0].key], epcValue);
+  }
+
+  // Entre dos puntos conocidos: interpolar por paneles
+  for (let i = 0; i < matches.length - 1; i++) {
+    const left = matches[i];
+    const right = matches[i + 1];
+
+    if (panels >= left.panels && panels <= right.panels) {
+      const leftPayment = paymentFromPair(table[left.key], epcValue);
+      const rightPayment = paymentFromPair(table[right.key], epcValue);
+      const ratio = (panels - left.panels) / (right.panels - left.panels);
+      return leftPayment + ratio * (rightPayment - leftPayment);
+    }
+  }
+
+  // Encima del último punto conocido: proyectar usando los últimos dos puntos.
+  if (matches.length >= 2) {
+    const last = matches[matches.length - 1];
+    const prev = matches[matches.length - 2];
+
+    const lastPayment = paymentFromPair(table[last.key], epcValue);
+    const prevPayment = paymentFromPair(table[prev.key], epcValue);
+    const slopeByPanel = (lastPayment - prevPayment) / (last.panels - prev.panels);
+
+    return lastPayment + (panels - last.panels) * slopeByPanel;
+  }
+
+  return paymentFromPair(table[matches[0].key], epcValue);
+}
+
+function calc() {
+  const panels = getVal('panels');
+  const batteries = getVal('batteries');
+  const roleRate = getVal('role');
+  const saleEpcInput = getVal('saleEpc');
+
+  const watts = panels * WATTS_PER_PANEL;
+  const kw = watts / 1000;
+
+  const rules = getRules(program, panels, batteries);
+  const baseSolar = rules.isEligible ? watts * rules.multiplier : 0;
+  const total = rules.isEligible ? baseSolar + rules.batteryTotal : 0;
+  const epcBase = rules.isEligible && kw > 0 ? (total / kw) / 1000 : 0;
+
+  const saleEpcFinal = rules.isEligible ? (saleEpcInput > 0 ? saleEpcInput : epcBase) : 0;
+  const saleTotal = rules.isEligible ? saleEpcFinal * kw * 1000 : 0;
+  const saleCommission = rules.isEligible ? saleTotal - total : 0;
+  const commissionBase = rules.isEligible ? total * roleRate : 0;
+
+  const annualProd = (watts * SUN_HOURS_ANNUAL) / 1000;
+  const monthlyProd = annualProd / 12;
+
+  const c1 = getVal('c1'), c2 = getVal('c2'), c3 = getVal('c3');
+  const avg = (c1 + c2 + c3) / 3 || 0;
+  const annualCons = avg * 12;
+  const offsetPercent = annualCons > 0 ? (annualProd / annualCons) * 100 : 0;
+  const productionPerPanel = (WATTS_PER_PANEL * SUN_HOURS_ANNUAL) / 1000;
+  const panelsFor120 = annualCons > 0 ? Math.ceil((annualCons * 1.2) / productionPerPanel) : 0;
+  const extraPanels = Math.max(panelsFor120 - panels, 0);
+  const panelsNeeded = avg > 0 ? Math.ceil(avg / (productionPerPanel / 12)) : 0;
+
+  const estimatedPayment = rules.isEligible ? estimatePayment(panels, batteries, saleEpcFinal) : 0;
+
+  document.getElementById('eligibilityMsg').textContent = rules.eligibilityText;
+  document.getElementById('epcBase').textContent = epc(epcBase);
+  document.getElementById('epcVenta').textContent = epc(saleEpcFinal);
+  document.getElementById('kw').textContent = epc(kw) + ' kW';
+  document.getElementById('watts').textContent = num(watts, 0) + ' W';
+  document.getElementById('baseSolar').textContent = money(baseSolar);
+  document.getElementById('annualCons').textContent = num(annualCons, 0) + ' kWh';
+  document.getElementById('annualProd').textContent = num(annualProd, 0) + ' kWh';
+  document.getElementById('monthlyProd').textContent = num(monthlyProd, 0) + ' kWh';
+  document.getElementById('systemBase').textContent = money(total);
+  document.getElementById('commissionBase').textContent = money(commissionBase);
+  document.getElementById('systemSale').textContent = money(saleTotal);
+  document.getElementById('commissionSale').textContent = money(saleCommission);
+  document.getElementById('avgMonthly').textContent = num(avg, 0) + ' kWh';
+  document.getElementById('fixedPayment').value = money(estimatedPayment);
+  document.getElementById('offset').textContent = num(offsetPercent, 0) + '%';
+  document.getElementById('rec120').textContent = extraPanels > 0 ? 'Añadir ' + extraPanels + ' paneles' : 'Ya está en 120%';
+  document.getElementById('panelsNeeded').textContent = panelsNeeded + ' paneles';
+}
+
+function usePanels() {
+  const text = document.getElementById('panelsNeeded').textContent;
+  const n = Number(text.split(' ')[0]) || 0;
+  document.getElementById('panels').value = n;
+  calc();
+}
+calc();
+</script>
+</body>
+</html>
