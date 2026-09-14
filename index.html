@@ -403,7 +403,12 @@ function calc() {
 
   const saleEpcFinal = rules.isEligible ? (saleEpcInput > 0 ? saleEpcInput : epcBase) : 0;
   const saleTotal = rules.isEligible ? saleEpcFinal * kw * 1000 : 0;
-  const saleCommission = rules.isEligible ? saleTotal - total : 0;
+  const epcBaseForAdjustment = Number(epcBase.toFixed(2));
+  const saleEpcForAdjustment = saleEpcInput > 0
+    ? Number(saleEpcFinal.toFixed(2))
+    : epcBaseForAdjustment;
+  const saleMargin = rules.isEligible ? (saleEpcForAdjustment - epcBaseForAdjustment) * watts : 0;
+  const saleCommission = saleMargin > 0 ? saleMargin * 0.7 : saleMargin;
   const commissionBase = rules.isEligible ? total * roleRate : 0;
 
   const annualProd = (watts * SUN_HOURS_ANNUAL) / 1000;
