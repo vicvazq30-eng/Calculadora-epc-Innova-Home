@@ -49,13 +49,14 @@
       height: 48px; display: flex; align-items: center; border-radius: 16px; padding: 0 14px;
       background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569;
     }
-    .programs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .programs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
     .program {
       cursor: pointer; border: 1px solid #cbd5e1; border-radius: 20px; padding: 17px; background: #fff;
       text-align: left; color: #334155; transition: .15s;
     }
     .program.active.personal { border-color: #0ea5e9; background: #f0f9ff; color: #075985; }
     .program.active.equipo { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+    .program.active.cash { border-color: #10b981; background: #ecfdf5; color: #065f46; }
     .program strong { display: block; font-size: 18px; margin-bottom: 4px; }
     .program span { font-size: 12px; color: inherit; opacity: .75; }
     #eligibilityMsg { margin-top: 12px; font-size: 13px; font-weight: 800; color: #dc2626; }
@@ -123,6 +124,10 @@
                 <strong>Sunrun Equipo</strong>
                 <span>Oferta equipo</span>
               </button>
+              <button id="cashBtn" class="program cash" onclick="setProgram('cash')">
+                <strong>Cash Residencial</strong>
+                <span>Oferta cash</span>
+              </button>
             </div>
             <div id="eligibilityMsg"></div>
           </div>
@@ -134,12 +139,33 @@
 
           <div>
             <label>Watts por panel</label>
-            <div class="display">410 W</div>
+            <div class="display" id="wattsPerPanel">410 W</div>
           </div>
 
           <div>
             <label>Cantidad de baterías</label>
             <input id="batteries" type="number" value="1" oninput="calc()" />
+          </div>
+
+          <div id="cashPriceField" style="display:none">
+            <label>Nivel de precio</label>
+            <select id="cashPriceTier" onchange="calc()">
+              <option value="suggested">Precio Sugerido</option>
+              <option value="economy">Economy Solar</option>
+              <option value="lastChance">Last Chance</option>
+            </select>
+          </div>
+
+          <div id="cashBatteryBrandField" style="display:none">
+            <label>Marca de batería</label>
+            <select id="cashBatteryBrand" onchange="setCashBatteryBrand()">
+              <option value="none">Sin batería</option>
+              <option value="soltech128">Soltech ESS 12.8 kWh</option>
+              <option value="soltech102">Soltech ESS 10.2 kWh</option>
+              <option value="tesla">Tesla</option>
+              <option value="sonnen">Sonnen</option>
+              <option value="eg4">EG4</option>
+            </select>
           </div>
 
           <div>
@@ -154,12 +180,12 @@
             </select>
           </div>
 
-          <div class="full">
+          <div class="full" id="saleEpcField">
             <label>EPC de venta</label>
             <input id="saleEpc" type="number" step="0.01" placeholder="Ej: 4.50" oninput="calc()" />
           </div>
 
-          <div class="full highlights">
+          <div class="full highlights" id="epcHighlights">
             <div class="highlight">
               <div>EPC Base</div>
               <div id="epcBase">0.00</div>
@@ -170,13 +196,13 @@
             </div>
           </div>
 
-          <div class="full paymentBox">
+          <div class="full paymentBox" id="fixedPaymentBox">
             <label>Pago aproximado fijo</label>
             <input id="fixedPayment" type="text" value="$0.00" />
             <div class="paymentHint">Se actualiza automáticamente con paneles, baterías y EPC de venta. Puedes sobrescribirlo manualmente al final.</div>
           </div>
 
-          <div class="full paymentBox">
+          <div class="full paymentBox" id="steppedPaymentBox">
             <label>Pago aproximado escalonado</label>
             <input id="steppedPayment" type="text" value="$0.00" />
             <div class="paymentHint">Se actualiza automáticamente con paneles, baterías y EPC de venta. Puedes sobrescribirlo manualmente al final.</div>
@@ -190,17 +216,17 @@
           <div class="metrics">
             <div class="metric"><div class="t">kW</div><div class="v" id="kw">0.00 kW</div></div>
             <div class="metric"><div class="t">Watts</div><div class="v" id="watts">0 W</div></div>
-            <div class="metric"><div class="t">PV Base</div><div class="v" id="baseSolar">$0.00</div></div>
-            <div class="metric"><div class="t">Promedio consumo anual actual</div><div class="v" id="annualCons">0 kWh</div></div>
+            <div class="metric" id="baseSolarMetric"><div class="t">PV Base</div><div class="v" id="baseSolar">$0.00</div></div>
+            <div class="metric" id="annualConsMetric"><div class="t">Promedio consumo anual actual</div><div class="v" id="annualCons">0 kWh</div></div>
             <div class="metric"><div class="t">Producción Anual</div><div class="v" id="annualProd">0 kWh</div></div>
             <div class="metric"><div class="t">Producción Mensual</div><div class="v" id="monthlyProd">0 kWh</div></div>
-            <div class="metric"><div class="t">Sistema Base</div><div class="v" id="systemBase">$0.00</div></div>
-            <div class="metric"><div class="t">Comisión Base</div><div class="v" id="commissionBase">$0.00</div></div>
-            <div class="metric"><div class="t">Sistema Venta</div><div class="v" id="systemSale">$0.00</div></div>
-            <div class="metric"><div class="t">Comisión Venta</div><div class="v" id="commissionSale">$0.00</div><div style="margin-top:6px;font-size:11px;color:#a16207;font-weight:700;">70% vendedor · 30% compañía</div></div>
+            <div class="metric"><div class="t" id="systemBaseLabel">Sistema Base</div><div class="v" id="systemBase">$0.00</div></div>
+            <div class="metric"><div class="t" id="commissionBaseLabel">Comisión Base</div><div class="v" id="commissionBase">$0.00</div></div>
+            <div class="metric" id="systemSaleMetric"><div class="t">Sistema Venta</div><div class="v" id="systemSale">$0.00</div></div>
+            <div class="metric" id="commissionSaleMetric"><div class="t">Comisión Venta</div><div class="v" id="commissionSale">$0.00</div><div style="margin-top:6px;font-size:11px;color:#a16207;font-weight:700;">70% vendedor · 30% compañía</div></div>
           </div>
 
-          <div class="offset">
+          <div class="offset" id="offsetBlock">
             <div>
               <div class="t">Offset promedio</div>
               <div class="big" id="offset">0%</div>
@@ -213,7 +239,7 @@
         </div>
       </div>
 
-      <div class="card wide">
+      <div class="card wide" id="consumptionCard">
         <h2>📊 Promedio de Consumo</h2>
         <p class="sub">Calcula el promedio de los 3 meses más altos y estima paneles necesarios.</p>
         <div class="content formgrid">
@@ -233,8 +259,29 @@
 
 <script>
 let program = 'personal';
+let innovaBatteryCount = 1;
+let cashBatteryCount = 0;
 const WATTS_PER_PANEL = 410;
+const CASH_WATTS_PER_PANEL = 560;
 const SUN_HOURS_ANNUAL = 1440;
+
+const CASH_SOLAR_RATES = {
+  suggested: 2.50,
+  economy: 2.25,
+  lastChance: 2.00,
+};
+
+const CASH_SOLTECH_BASE_COSTS = {
+  suggested: { soltech128: 12000, soltech102: 11000 },
+  economy: { soltech128: 10000, soltech102: 8000 },
+  lastChance: { soltech128: 10000, soltech102: 8000 },
+};
+
+const CASH_BATTERY_BASE_COSTS = {
+  tesla: 11000,
+  sonnen: 9000,
+  eg4: 10000,
+};
 
 const fixedTable = {
   1: {
@@ -272,20 +319,113 @@ function epc(n) {
   return (Number(n) || 0).toFixed(2);
 }
 function setProgram(p) {
+  const previousProgram = program;
+  const batteryInput = document.getElementById('batteries');
+
+  if (previousProgram === 'cash') {
+    cashBatteryCount = getVal('batteries');
+  } else {
+    innovaBatteryCount = getVal('batteries');
+  }
+
   program = p;
+
+  if (previousProgram === 'cash' && p !== 'cash') {
+    batteryInput.value = innovaBatteryCount;
+  } else if (previousProgram !== 'cash' && p === 'cash') {
+    batteryInput.value = cashBatteryCount;
+  }
+
   document.getElementById('personalBtn').className = 'program personal' + (p === 'personal' ? ' active' : '');
   document.getElementById('equipoBtn').className = 'program equipo' + (p === 'equipo' ? ' active' : '');
+  document.getElementById('cashBtn').className = 'program cash' + (p === 'cash' ? ' active' : '');
+  updateProgramUI();
   calc();
+}
+
+function updateProgramUI() {
+  const isCash = program === 'cash';
+  const panelsInput = document.getElementById('panels');
+  const batteryInput = document.getElementById('batteries');
+
+  document.getElementById('wattsPerPanel').textContent = isCash ? '560 W' : '410 W';
+  document.getElementById('cashPriceField').style.display = isCash ? '' : 'none';
+  document.getElementById('cashBatteryBrandField').style.display = isCash ? '' : 'none';
+  document.getElementById('saleEpcField').style.display = isCash ? 'none' : '';
+  document.getElementById('epcHighlights').style.display = isCash ? 'none' : '';
+  document.getElementById('fixedPaymentBox').style.display = isCash ? 'none' : '';
+  document.getElementById('steppedPaymentBox').style.display = isCash ? 'none' : '';
+  document.getElementById('baseSolarMetric').style.display = isCash ? 'none' : '';
+  document.getElementById('annualConsMetric').style.display = isCash ? 'none' : '';
+  document.getElementById('systemSaleMetric').style.display = isCash ? 'none' : '';
+  document.getElementById('commissionSaleMetric').style.display = isCash ? 'none' : '';
+  document.getElementById('offsetBlock').style.display = isCash ? 'none' : '';
+  document.getElementById('consumptionCard').style.display = isCash ? 'none' : '';
+  document.getElementById('systemBaseLabel').textContent = isCash ? 'Monto total del sistema' : 'Sistema Base';
+  document.getElementById('commissionBaseLabel').textContent = isCash ? 'Comisión del vendedor' : 'Comisión Base';
+
+  panelsInput.min = isCash ? '10' : '0';
+  if (isCash) {
+    panelsInput.max = '53';
+  } else {
+    panelsInput.removeAttribute('max');
+  }
+
+  const cashBrand = document.getElementById('cashBatteryBrand').value;
+  batteryInput.disabled = isCash && cashBrand === 'none';
+}
+
+function setCashBatteryBrand() {
+  const brand = document.getElementById('cashBatteryBrand').value;
+  const batteryInput = document.getElementById('batteries');
+
+  if (brand === 'none') {
+    batteryInput.value = 0;
+  } else if (getVal('batteries') === 0) {
+    batteryInput.value = 1;
+  }
+
+  cashBatteryCount = getVal('batteries');
+  updateProgramUI();
+  calc();
+}
+
+function getCashBatteryTotal(priceTier, batteryBrand, batteries) {
+  if (batteryBrand === 'none' || batteries <= 0) return 0;
+
+  let firstBatteryCost = 0;
+
+  if (batteryBrand === 'soltech128' || batteryBrand === 'soltech102') {
+    firstBatteryCost = CASH_SOLTECH_BASE_COSTS[priceTier][batteryBrand];
+  } else {
+    firstBatteryCost = CASH_BATTERY_BASE_COSTS[batteryBrand] || 0;
+  }
+
+  const additionalBatteryCost = Math.max(firstBatteryCost - 1000, 0);
+  return firstBatteryCost + Math.max(batteries - 1, 0) * additionalBatteryCost;
 }
 function getVal(id) {
   return Number(document.getElementById(id).value) || 0;
 }
 
-function getRules(programName, panels, batteries) {
+function getRules(programName, panels, batteries, priceTier, batteryBrand) {
   let isEligible = true;
   let multiplier = 0;
   let batteryTotal = 0;
   let eligibilityText = '';
+
+  if (programName === 'cash') {
+    if (panels < 10) {
+      isEligible = false;
+      eligibilityText = 'Sistema no elegible: mínimo requerido 10 paneles';
+    } else if (panels > 53) {
+      isEligible = false;
+      eligibilityText = 'Sistema no elegible: máximo permitido 53 paneles';
+    } else {
+      multiplier = CASH_SOLAR_RATES[priceTier];
+      batteryTotal = getCashBatteryTotal(priceTier, batteryBrand, batteries);
+    }
+  }
 
   if (programName === 'personal') {
     if (panels < 10) {
@@ -413,22 +553,30 @@ function calc() {
   const batteries = getVal('batteries');
   const roleRate = getVal('role');
   const saleEpcInput = getVal('saleEpc');
+  const cashPriceTier = document.getElementById('cashPriceTier').value;
+  const cashBatteryBrand = document.getElementById('cashBatteryBrand').value;
+  const wattsPerPanel = program === 'cash' ? CASH_WATTS_PER_PANEL : WATTS_PER_PANEL;
 
-  const watts = panels * WATTS_PER_PANEL;
+  const watts = panels * wattsPerPanel;
   const kw = watts / 1000;
 
-  const rules = getRules(program, panels, batteries);
+  const rules = getRules(program, panels, batteries, cashPriceTier, cashBatteryBrand);
   const baseSolar = rules.isEligible ? watts * rules.multiplier : 0;
   const total = rules.isEligible ? baseSolar + rules.batteryTotal : 0;
   const epcBase = rules.isEligible && kw > 0 ? (total / kw) / 1000 : 0;
 
-  const saleEpcFinal = rules.isEligible ? (saleEpcInput > 0 ? saleEpcInput : epcBase) : 0;
-  const saleTotal = rules.isEligible ? saleEpcFinal * kw * 1000 : 0;
+  const isCash = program === 'cash';
+  const saleEpcFinal = rules.isEligible
+    ? (isCash ? epcBase : (saleEpcInput > 0 ? saleEpcInput : epcBase))
+    : 0;
+  const saleTotal = rules.isEligible ? (isCash ? total : saleEpcFinal * kw * 1000) : 0;
   const epcBaseForAdjustment = Number(epcBase.toFixed(2));
   const saleEpcForAdjustment = saleEpcInput > 0
     ? Number(saleEpcFinal.toFixed(2))
     : epcBaseForAdjustment;
-  const saleMargin = rules.isEligible ? (saleEpcForAdjustment - epcBaseForAdjustment) * watts : 0;
+  const saleMargin = rules.isEligible && !isCash
+    ? (saleEpcForAdjustment - epcBaseForAdjustment) * watts
+    : 0;
   const saleCommission = saleMargin > 0 ? saleMargin * 0.7 : saleMargin;
   const commissionBase = rules.isEligible ? total * roleRate : 0;
 
@@ -439,13 +587,17 @@ function calc() {
   const avg = (c1 + c2 + c3) / 3 || 0;
   const annualCons = avg * 12;
   const offsetPercent = annualCons > 0 ? (annualProd / annualCons) * 100 : 0;
-  const productionPerPanel = (WATTS_PER_PANEL * SUN_HOURS_ANNUAL) / 1000;
+  const productionPerPanel = (wattsPerPanel * SUN_HOURS_ANNUAL) / 1000;
   const panelsFor120 = annualCons > 0 ? Math.ceil((annualCons * 1.2) / productionPerPanel) : 0;
   const extraPanels = Math.max(panelsFor120 - panels, 0);
   const panelsNeeded = avg > 0 ? Math.ceil(avg / (productionPerPanel / 12)) : 0;
 
-  const estimatedFixedPayment = rules.isEligible ? estimatePayment(fixedTable, panels, batteries, saleEpcFinal) : 0;
-  const estimatedSteppedPayment = rules.isEligible ? estimatePayment(steppedTable, panels, batteries, saleEpcFinal) : 0;
+  const estimatedFixedPayment = rules.isEligible && !isCash
+    ? estimatePayment(fixedTable, panels, batteries, saleEpcFinal)
+    : 0;
+  const estimatedSteppedPayment = rules.isEligible && !isCash
+    ? estimatePayment(steppedTable, panels, batteries, saleEpcFinal)
+    : 0;
 
   document.getElementById('eligibilityMsg').textContent = rules.eligibilityText;
   document.getElementById('epcBase').textContent = epc(epcBase);
@@ -474,6 +626,7 @@ function usePanels() {
   document.getElementById('panels').value = n;
   calc();
 }
+updateProgramUI();
 calc();
 </script>
 </body>
