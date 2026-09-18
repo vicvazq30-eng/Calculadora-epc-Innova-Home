@@ -254,6 +254,32 @@
           </div>
         </div>
       </div>
+
+      <div class="card wide" id="cashFutureAcCard" style="display:none">
+        <h2>❄️ Consumos futuros</h2>
+        <p class="sub">Calcula el consumo de aires acondicionados futuros y los paneles adicionales necesarios para Cash Residencial.</p>
+        <div class="content">
+          <div id="cashFutureAirs"></div>
+
+          <div class="programs" style="grid-template-columns:1fr 1fr; margin-top:16px;">
+            <button class="program cash" type="button" onclick="addCashFutureAir()">
+              <strong>Añadir otro aire</strong>
+              <span>Agregar otro consumo futuro</span>
+            </button>
+            <button class="program" type="button" onclick="removeCashFutureAir()">
+              <strong>Quitar último aire</strong>
+              <span>Disponible cuando hay más de uno</span>
+            </button>
+          </div>
+
+          <div class="metrics" style="margin-top:16px;">
+            <div class="metric"><div class="t">Consumo futuro total</div><div class="v" id="cashFutureMonthly">0 kWh/mes</div></div>
+            <div class="metric"><div class="t">Paneles adicionales totales</div><div class="v" id="cashFuturePanels">+0 paneles</div></div>
+            <div class="metric"><div class="t">Sistema seleccionado</div><div class="v" id="cashSelectedPanels">0 paneles</div></div>
+            <div class="metric"><div class="t">Sistema recomendado final</div><div class="v" id="cashRecommendedPanels">0 paneles</div></div>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -261,6 +287,10 @@
 let program = 'personal';
 let innovaBatteryCount = 1;
 let cashBatteryCount = 0;
+let cashFutureAirs = [
+  { id: 1, btu: 0, seer: 0, hours: 0, customSeer: false },
+];
+let nextCashAirId = 2;
 const WATTS_PER_PANEL = 410;
 const CASH_WATTS_PER_PANEL = 560;
 const SUN_HOURS_ANNUAL = 1440;
@@ -281,6 +311,13 @@ const CASH_BATTERY_BASE_COSTS = {
   tesla: 11000,
   sonnen: 9000,
   eg4: 10000,
+};
+
+const AIR_SEER_OPTIONS = {
+  12000: [17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
+  18000: [17, 18, 19, 20, 21, 22, 23, 23.5, 24, 24.5, 25, 26, 27, 27.5],
+  24000: [17, 18, 19, 20, 21, 21.5, 22, 23, 24, 24.5, 25, 26, 27],
+  36000: [16, 17, 18, 19, 20, 21, 22],
 };
 
 const fixedTable = {
@@ -361,6 +398,7 @@ function updateProgramUI() {
   document.getElementById('commissionSaleMetric').style.display = isCash ? 'none' : '';
   document.getElementById('offsetBlock').style.display = isCash ? 'none' : '';
   document.getElementById('consumptionCard').style.display = isCash ? 'none' : '';
+  document.getElementById('cashFutureAcCard').style.display = isCash ? '' : 'none';
   document.getElementById('systemBaseLabel').textContent = isCash ? 'Monto total del sistema' : 'Sistema Base';
   document.getElementById('commissionBaseLabel').textContent = isCash ? 'Comisión del vendedor' : 'Comisión Base';
 
@@ -404,6 +442,121 @@ function getCashBatteryTotal(priceTier, batteryBrand, batteries) {
   const additionalBatteryCost = Math.max(firstBatteryCost - 1000, 0);
   return firstBatteryCost + Math.max(batteries - 1, 0) * additionalBatteryCost;
 }
+
+function renderCashFutureAirs() {
+  const container = document.getElementById('cashFutureAirs');
+  if (!container) return;
+
+  container.innerHTML = cashFutureAirs.map((air, index) => {
+    const seerOptions = AIR_SEER_OPTIONS[air.btu] || [];
+    const monthlyConsumption = air.btu > 0 && air.seer > 0 && air.hours > 0
+      ? ((air.btu / air.seer) / 1000) * air.hours * 30
+      : 0;
+    const panelMonthlyKwh = ((CASH_WATTS_PER_PANEL * SUN_HOURS_ANNUAL) / 1000) / 12;
+    const panelsNeeded = monthlyConsumption > 0
+      ? Math.ceil(monthlyConsumption / panelMonthlyKwh)
+      : 0;
+
+    return `
+      <div style="${index > 0 ? 'margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;' : ''}">
+        <strong style="display:block;margin-bottom:12px;">Aire ${index + 1}</strong>
+        <div class="formgrid">
+          <div>
+            <label>Aire acondicionado</label>
+            <select onchange="updateCashAirBtu(${air.id}, this.value)">
+              <option value="0" ${air.btu === 0 ? 'selected' : ''}>Seleccionar BTU</option>
+              <option value="12000" ${air.btu === 12000 ? 'selected' : ''}>12,000 BTU</option>
+              <option value="18000" ${air.btu === 18000 ? 'selected' : ''}>18,000 BTU</option>
+              <option value="24000" ${air.btu === 24000 ? 'selected' : ''}>24,000 BTU</option>
+              <option value="36000" ${air.btu === 36000 ? 'selected' : ''}>36,000 BTU</option>
+            </select>
+          </div>
+
+          <div>
+            <label>SEER / SEER2</label>
+            <select ${air.btu ? '' : 'disabled'} onchange="updateCashAirSeer(${air.id}, this.value)">
+              <option value="">Seleccionar SEER</option>
+              ${seerOptions.map(seer => `<option value="${seer}" ${!air.customSeer && air.seer === seer ? 'selected' : ''}>${seer}</option>`).join('')}
+              <option value="custom" ${air.customSeer ? 'selected' : ''}>Otro / valor exacto</option>
+            </select>
+          </div>
+
+          ${air.customSeer ? `
+          <div>
+            <label>SEER / SEER2 exacto</label>
+            <input type="number" min="10" max="40" step="0.1" value="${air.seer || ''}" placeholder="Ej: 18.8" oninput="updateCashAirCustomSeer(${air.id}, this.value)" />
+          </div>
+          ` : ''}
+
+          <div>
+            <label>Horas de uso diario</label>
+            <input type="number" min="0" max="24" step="0.5" value="${air.hours || ''}" placeholder="Ej: 8" oninput="updateCashAirHours(${air.id}, this.value)" />
+          </div>
+        </div>
+
+        <div class="metrics" style="margin-top:12px;">
+          <div class="metric"><div class="t">SEER usado</div><div class="v">${air.seer || '—'}</div></div>
+          <div class="metric"><div class="t">Consumo mensual</div><div class="v">${num(monthlyConsumption, 0)} kWh</div></div>
+          <div class="metric"><div class="t">Paneles para este aire</div><div class="v">+${panelsNeeded}</div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateCashAirBtu(id, value) {
+  const air = cashFutureAirs.find(item => item.id === id);
+  if (!air) return;
+  air.btu = Number(value) || 0;
+  air.seer = 0;
+  air.customSeer = false;
+  renderCashFutureAirs();
+  calc();
+}
+
+function updateCashAirSeer(id, value) {
+  const air = cashFutureAirs.find(item => item.id === id);
+  if (!air) return;
+
+  if (value === 'custom') {
+    air.customSeer = true;
+    air.seer = 0;
+  } else {
+    air.customSeer = false;
+    air.seer = Number(value) || 0;
+  }
+
+  renderCashFutureAirs();
+  calc();
+}
+
+function updateCashAirCustomSeer(id, value) {
+  const air = cashFutureAirs.find(item => item.id === id);
+  if (!air) return;
+  air.seer = Number(value) || 0;
+  calc();
+}
+
+function updateCashAirHours(id, value) {
+  const air = cashFutureAirs.find(item => item.id === id);
+  if (!air) return;
+  air.hours = Number(value) || 0;
+  calc();
+}
+
+function addCashFutureAir() {
+  cashFutureAirs.push({ id: nextCashAirId++, btu: 0, seer: 0, hours: 0, customSeer: false });
+  renderCashFutureAirs();
+  calc();
+}
+
+function removeCashFutureAir() {
+  if (cashFutureAirs.length <= 1) return;
+  cashFutureAirs.pop();
+  renderCashFutureAirs();
+  calc();
+}
+
 function getVal(id) {
   return Number(document.getElementById(id).value) || 0;
 }
@@ -592,6 +745,20 @@ function calc() {
   const extraPanels = Math.max(panelsFor120 - panels, 0);
   const panelsNeeded = avg > 0 ? Math.ceil(avg / (productionPerPanel / 12)) : 0;
 
+  const cashPanelMonthlyKwh = ((CASH_WATTS_PER_PANEL * SUN_HOURS_ANNUAL) / 1000) / 12;
+  const cashFutureLoads = cashFutureAirs.map(air => {
+    const monthlyConsumption = air.btu > 0 && air.seer > 0 && air.hours > 0
+      ? ((air.btu / air.seer) / 1000) * air.hours * 30
+      : 0;
+    const panelsNeeded = monthlyConsumption > 0
+      ? Math.ceil(monthlyConsumption / cashPanelMonthlyKwh)
+      : 0;
+    return { monthlyConsumption, panelsNeeded };
+  });
+  const cashFutureMonthly = cashFutureLoads.reduce((sum, air) => sum + air.monthlyConsumption, 0);
+  const cashFuturePanels = cashFutureLoads.reduce((sum, air) => sum + air.panelsNeeded, 0);
+  const cashRecommendedPanels = panels + cashFuturePanels;
+
   const estimatedFixedPayment = rules.isEligible && !isCash
     ? estimatePayment(fixedTable, panels, batteries, saleEpcFinal)
     : 0;
@@ -618,6 +785,10 @@ function calc() {
   document.getElementById('offset').textContent = num(offsetPercent, 0) + '%';
   document.getElementById('rec120').textContent = extraPanels > 0 ? 'Añadir ' + extraPanels + ' paneles' : 'Ya está en 120%';
   document.getElementById('panelsNeeded').textContent = panelsNeeded + ' paneles';
+  document.getElementById('cashFutureMonthly').textContent = num(cashFutureMonthly, 0) + ' kWh/mes';
+  document.getElementById('cashFuturePanels').textContent = '+' + cashFuturePanels + ' paneles';
+  document.getElementById('cashSelectedPanels').textContent = panels + ' paneles';
+  document.getElementById('cashRecommendedPanels').textContent = cashRecommendedPanels + ' paneles';
 }
 
 function usePanels() {
@@ -626,6 +797,7 @@ function usePanels() {
   document.getElementById('panels').value = n;
   calc();
 }
+renderCashFutureAirs();
 updateProgramUI();
 calc();
 </script>
