@@ -154,6 +154,12 @@
               <option value="economy">Economy Solar</option>
               <option value="lastChance">Last Chance</option>
             </select>
+            <div
+              id="cashEconomyWarning"
+              style="display:none;margin-top:10px;padding:12px 14px;border:1px solid #f59e0b;border-radius:14px;background:#fffbeb;color:#92400e;font-size:13px;font-weight:800;line-height:1.4;"
+            >
+              Advertencia: al utilizar Economy Solar, su comisión se verá afectada y será determinada por el Gerente General.
+            </div>
           </div>
 
           <div id="cashBatteryBrandField" style="display:none">
@@ -709,6 +715,9 @@ function calc() {
   const cashPriceTier = document.getElementById('cashPriceTier').value;
   const cashBatteryBrand = document.getElementById('cashBatteryBrand').value;
   const wattsPerPanel = program === 'cash' ? CASH_WATTS_PER_PANEL : WATTS_PER_PANEL;
+
+  document.getElementById('cashEconomyWarning').style.display =
+    program === 'cash' && cashPriceTier === 'economy' ? 'block' : 'none';
 
   const watts = panels * wattsPerPanel;
   const kw = watts / 1000;
