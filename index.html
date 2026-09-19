@@ -590,9 +590,9 @@ function getRules(programName, panels, batteries, priceTier, batteryBrand) {
       isEligible = false;
       eligibilityText = 'Sistema no elegible: mínimo requerido 10 paneles';
     } else if (batteries >= 2) {
-      if (panels < 22) {
+      if (panels < 18) {
         isEligible = false;
-        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 22 paneles';
+        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 18 paneles';
       } else {
         multiplier = 2.05;
         batteryTotal = batteries * 10000;
@@ -617,9 +617,9 @@ function getRules(programName, panels, batteries, priceTier, batteryBrand) {
       isEligible = false;
       eligibilityText = 'Sistema no elegible: mínimo requerido 10 paneles';
     } else if (batteries >= 2) {
-      if (panels < 22) {
+      if (panels < 18) {
         isEligible = false;
-        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 22 paneles';
+        eligibilityText = 'Sistema no elegible: 2 baterías requieren mínimo 18 paneles';
       } else {
         multiplier = 2.17;
         batteryTotal = batteries * 10500;
