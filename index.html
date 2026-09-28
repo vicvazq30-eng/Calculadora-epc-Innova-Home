@@ -149,10 +149,10 @@
 
           <div id="cashPriceField" style="display:none">
             <label>Nivel de precio</label>
-            <select id="cashPriceTier" onchange="calc()">
+            <select id="cashPriceTier" onchange="setCashPriceTier()">
               <option value="suggested">Precio Sugerido</option>
               <option value="economy">Economy Solar</option>
-              <option value="lastChance">Last Chance</option>
+              <option value="lastChance">Super Economy Last Chance</option>
             </select>
             <div
               id="cashPriceWarning"
@@ -174,7 +174,7 @@
 
           <div>
             <label>Rol del vendedor</label>
-            <select id="role" onchange="calc()">
+            <select id="role" onchange="handleRoleChange()">
               <option value="0.06">Trainee — 6%</option>
               <option value="0.10" selected>Consultor — 10%</option>
               <option value="0.11">Líder — 11%</option>
@@ -308,6 +308,49 @@ const CASH_SOLAR_RATES = {
   lastChance: 2.00,
 };
 
+const CASH_COMMISSION_RATES = {
+  suggested: {
+    trainee: 0.06,
+    consultor: 0.10,
+    lider: 0.11,
+    gerente: 0.12,
+    gerenteEjecutivo: 0.14,
+    partner: 0.15,
+    partnerEjecutivo: 0.16,
+  },
+  economy: {
+    trainee: 0.03,
+    consultor: 0.04,
+    lider: 0.06,
+    gerente: 0.08,
+    gerenteEjecutivo: 0.10,
+    partner: 0.11,
+    partnerEjecutivo: 0.12,
+  },
+  lastChance: {
+    trainee: 0.02,
+    consultor: 0.03,
+    lider: 0.04,
+    gerente: 0.05,
+    gerenteEjecutivo: 0.06,
+    partner: 0.07,
+    partnerEjecutivo: 0.08,
+  },
+};
+
+const CASH_ROLE_LABELS = {
+  trainee: 'Trainee',
+  consultor: 'Consultor',
+  lider: 'Líder',
+  gerente: 'Gerente',
+  gerenteEjecutivo: 'Gerente Ejecutivo',
+  partner: 'Partner',
+  partnerEjecutivo: 'Partner Ejecutivo',
+};
+
+let innovaRoleRate = '0.10';
+let cashSellerRole = 'consultor';
+
 const CASH_SOLTECH_BASE_COSTS = {
   suggested: { soltech128: 12000, soltech102: 11000 },
   economy: { soltech128: 10000, soltech102: 8000 },
@@ -408,6 +451,7 @@ function updateProgramUI() {
   document.getElementById('cashFutureAcCard').style.display = isCash ? '' : 'none';
   document.getElementById('systemBaseLabel').textContent = isCash ? 'Monto total del sistema' : 'Sistema Base';
   document.getElementById('commissionBaseLabel').textContent = isCash ? 'Comisión del vendedor' : 'Comisión Base';
+  updateRoleOptions();
 
   panelsInput.min = isCash ? '10' : '0';
   if (isCash) {
@@ -418,6 +462,50 @@ function updateProgramUI() {
 
   const cashBrand = document.getElementById('cashBatteryBrand').value;
   batteryInput.disabled = isCash && cashBrand === 'none';
+}
+
+function setCashPriceTier() {
+  updateRoleOptions();
+  calc();
+}
+
+function handleRoleChange() {
+  const roleSelect = document.getElementById('role');
+  if (program === 'cash') {
+    cashSellerRole = roleSelect.selectedOptions[0]?.dataset.role || cashSellerRole;
+  } else {
+    innovaRoleRate = roleSelect.value;
+  }
+  calc();
+}
+
+function updateRoleOptions() {
+  const roleSelect = document.getElementById('role');
+
+  if (program === 'cash') {
+    const selectedRole = roleSelect.selectedOptions[0]?.dataset.role;
+    if (selectedRole) cashSellerRole = selectedRole;
+
+    const priceTier = document.getElementById('cashPriceTier').value;
+    const rates = CASH_COMMISSION_RATES[priceTier];
+
+    roleSelect.innerHTML = Object.entries(CASH_ROLE_LABELS)
+      .map(([key, label]) => `<option value="${rates[key]}" data-role="${key}">${label} — ${Math.round(rates[key] * 100)}%</option>`)
+      .join('');
+    roleSelect.value = String(rates[cashSellerRole]);
+  } else {
+    roleSelect.innerHTML = `
+      <option value="0.06">Trainee — 6%</option>
+      <option value="0.10">Consultor — 10%</option>
+      <option value="0.11">Líder — 11%</option>
+      <option value="0.12">Gerente — 12%</option>
+      <option value="0.13">Gerente Ejecutivo — 13%</option>
+      <option value="0.14">Jr. Partner — 14%</option>
+      <option value="0.15">Partner — 15%</option>
+      <option value="0.16">Partner Ejecutivo — 16%</option>
+    `;
+    roleSelect.value = innovaRoleRate;
+  }
 }
 
 function setCashBatteryBrand() {
@@ -721,8 +809,8 @@ function calc() {
   if (program === 'cash' && cashPriceTier !== 'suggested') {
     cashPriceWarning.style.display = 'block';
     cashPriceWarning.textContent = cashPriceTier === 'economy'
-      ? 'Advertencia: al utilizar Economy Solar, su comisión se verá afectada y será determinada por el Gerente General.'
-      : 'Advertencia: al utilizar Last Chance, su comisión será una comisión flat y será designada por el Gerente General.';
+      ? 'Economy Solar utiliza una escala de comisión ajustada por rol.'
+      : 'Super Economy Last Chance utiliza una escala de comisión ajustada por rol.';
   } else {
     cashPriceWarning.style.display = 'none';
     cashPriceWarning.textContent = '';
