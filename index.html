@@ -164,6 +164,8 @@
             <label>Marca de batería</label>
             <select id="cashBatteryBrand" onchange="setCashBatteryBrand()">
               <option value="none">Sin batería</option>
+              <option value="soltech218">Soltech ESS 21.8 kWh</option>
+              <option value="soltech178">Soltech ESS 17.8 kWh</option>
               <option value="soltech128">Soltech ESS 12.8 kWh</option>
               <option value="soltech102">Soltech ESS 10.2 kWh</option>
               <option value="tesla">Tesla</option>
@@ -352,9 +354,9 @@ let innovaRoleRate = '0.10';
 let cashSellerRole = 'consultor';
 
 const CASH_SOLTECH_BASE_COSTS = {
-  suggested: { soltech128: 12000, soltech102: 11000 },
-  economy: { soltech128: 10000, soltech102: 8000 },
-  lastChance: { soltech128: 10000, soltech102: 8000 },
+  suggested: { soltech218: 13000, soltech178: 12000, soltech128: 11000, soltech102: 10000 },
+  economy: { soltech218: 13000, soltech178: 12000, soltech128: 11000, soltech102: 10000 },
+  lastChance: { soltech218: 12000, soltech178: 11000, soltech128: 10000, soltech102: 9000 },
 };
 
 const CASH_BATTERY_BASE_COSTS = {
@@ -528,7 +530,7 @@ function getCashBatteryTotal(priceTier, batteryBrand, batteries) {
 
   let firstBatteryCost = 0;
 
-  if (batteryBrand === 'soltech128' || batteryBrand === 'soltech102') {
+  if (batteryBrand === 'soltech218' || batteryBrand === 'soltech178' || batteryBrand === 'soltech128' || batteryBrand === 'soltech102') {
     firstBatteryCost = CASH_SOLTECH_BASE_COSTS[priceTier][batteryBrand];
   } else {
     firstBatteryCost = CASH_BATTERY_BASE_COSTS[batteryBrand] || 0;
